@@ -35,8 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.TestPropertySource;
 
 @TestPropertySource(locations = "classpath:test-file.properties")
- @Category({ RequiresSpring.class })
-//@Category({RequiresNone.class})
+@Category({RequiresSpring.class})
 public class FileLogEntryDAOTest extends LogEntryDAOTest {
 
   @Value("${logging.persistence.file}")
@@ -44,7 +43,7 @@ public class FileLogEntryDAOTest extends LogEntryDAOTest {
 
   @Override
   public void cleanPersistence() {
-    // remove logentries out of loggingFilePath
+    // remove log entries out of loggingFilePath
     MatchCriteria criteria = new MatchCriteria();
     logEntryDAO.removeByCriteria(criteria);
   }

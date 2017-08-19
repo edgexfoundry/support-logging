@@ -7,6 +7,8 @@ tmp/**/*
 *.tmp
 *.bak
 *.swp
+logs/**
+logs/**/*
 *.log
 *~.nib
 local.properties

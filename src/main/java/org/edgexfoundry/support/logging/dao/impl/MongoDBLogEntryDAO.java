@@ -41,6 +41,10 @@ import org.springframework.stereotype.Component;
 public class MongoDBLogEntryDAO extends BaseLogEntryDAO {
 
   private static final Logger logger = LoggerFactory.getLogger(MongoDBLogEntryDAO.class);
+  
+  public MongoDBLogEntryDAO() {
+    logger.info("Logging is using Mongo to persist log messages.");
+  }
 
   @Autowired
   private MongoTemplate mongoTemplate;

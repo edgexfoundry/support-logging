@@ -76,6 +76,7 @@ public class FileLogEntryDAO extends BaseLogEntryDAO {
 
   @PostConstruct
   private void init() {
+    System.out.println("Logging is using Files to persist log messages.");
     initFileLogging();
     loadLoggingCache();
   }

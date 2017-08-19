@@ -18,10 +18,12 @@
 
 package org.edgexfoundry.support.logging.dao.integration;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +45,11 @@ import org.edgexfoundry.support.logging.dao.MDC_ENUM_CONSTANTS;
 @SpringBootTest(classes = EdgeXSupportLoggingApplication.class)
 public abstract class LogEntryDAOTest {
 
+  private static final String[] TEST_LABELS = {"test", "entry2"};
+  private static final Level TEST_LEVEL = Level.DEBUG;
+  private static final String TEST_MSG = "now is the time for all good men";
+  private static final String TEST_ORIGIN_SERVICE = "core-data";
+
   protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Autowired
@@ -53,7 +60,7 @@ public abstract class LogEntryDAOTest {
     cleanPersistence();
   }
 
-  // @After
+  @After
   public void tearDown() {
     cleanPersistence();
   }
@@ -78,48 +85,38 @@ public abstract class LogEntryDAOTest {
 
   @Test
   public void testSaveLoggable() {
-    LogEntry debug = buildLogEntry("debugService", Level.DEBUG, new String[] {"debug1", "debug2"},
-        "unit test of testSaveLoggable!");
+    LogEntry debug = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
     logEntryDAO.save(debug);
     verifyPersistence(debug, true);
   }
 
   @Test
   public void testSaveUnloggable() {
-    LogEntry trace = buildLogEntry("traceService", Level.TRACE,
-        new String[] {"trace1", "trace2", "trace3", "trace4", "trace5"},
-        "test log message for trace.");
+    LogEntry trace = buildLogEntry(TEST_ORIGIN_SERVICE, Level.TRACE, TEST_LABELS, TEST_MSG);
     logEntryDAO.save(trace);
     verifyPersistence(trace, false);
   }
 
-  @Test
-  public void testAddRemoveThenAdd() {
-    LogEntry debug = buildLogEntry("debugService", Level.DEBUG, new String[] {"debug1", "debug2"},
-        "unit test of testSaveLoggable!");
+  @Test // is this test needed or useful? TODO check with Jude Huang. Do we need to test debug add
+        // and info add together?
+  public void testSaveInfo() {
+    LogEntry debug = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
     logEntryDAO.save(debug);
     verifyPersistence(debug, true);
     MatchCriteria criteria = new MatchCriteria();
     logEntryDAO.removeByCriteria(criteria);
-    LogEntry info = buildLogEntry("infoService", Level.INFO,
-        new String[] {"info1", "info2", "info3"}, "test log message for info.");
+    LogEntry info = buildLogEntry(TEST_ORIGIN_SERVICE, Level.INFO, TEST_LABELS, TEST_MSG);
     logEntryDAO.save(info);
     verifyPersistence(info, true);
   }
 
-  @Test
+  @Test // is this test needed or useful? TODO check with Jude Huang
   public void testSaveFindThenRemoveByCriteria() {
-    LogEntry debug = buildLogEntry("debugService", Level.DEBUG, new String[] {"debug1", "debug2"},
-        "unit test of testSaveFindThenRemoveByCriteria for debug level.");
-    LogEntry info = buildLogEntry("infoService", Level.INFO,
-        new String[] {"info1", "info2", "info3"}, "test log message for info.");
-    LogEntry warn = buildLogEntry("warnService", Level.WARN, new String[] {"warn1"},
-        "test log message for warn.");
-    LogEntry error = buildLogEntry("errorService", Level.ERROR,
-        new String[] {"error1", "error2", "error3", "error4"}, "test log message for error.");
-    LogEntry trace = buildLogEntry("traceService", Level.TRACE,
-        new String[] {"trace1", "trace2", "trace3", "trace4", "trace5"},
-        "test log message for trace.");
+    LogEntry debug = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    LogEntry info = buildLogEntry(TEST_ORIGIN_SERVICE, Level.INFO, TEST_LABELS, TEST_MSG);
+    LogEntry warn = buildLogEntry(TEST_ORIGIN_SERVICE, Level.WARN, TEST_LABELS, TEST_MSG);
+    LogEntry error = buildLogEntry(TEST_ORIGIN_SERVICE, Level.ERROR, TEST_LABELS, TEST_MSG);
+    LogEntry trace = buildLogEntry(TEST_ORIGIN_SERVICE, Level.TRACE, TEST_LABELS, TEST_MSG);
     logEntryDAO.save(debug);
     verifyPersistence(debug, true);
     logEntryDAO.save(info);
@@ -142,6 +139,281 @@ public abstract class LogEntryDAOTest {
     logEntriesFound = logEntryDAO.findByCriteria(criteria, -1);
     assertTrue("Expect 0 but got " + logEntriesFound.size() + " logEntries to be found.",
         logEntriesFound.size() == 0);
+  }
+
+  @Test
+  public void testFindByTime() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria(null, null, null, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.findByCriteria(criteria, 10).size());
+  }
+
+  @Test
+  public void testFindByTimeNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(null, null, null, null, Long.MAX_VALUE - 100, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.findByCriteria(criteria, 10).isEmpty());
+  }
+
+  @Test
+  public void testFindByLabel() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria(null, null, TEST_LABELS, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.findByCriteria(criteria, 10).size());
+  }
+
+  @Test
+  public void testFindByLabelNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(null, null, new String[] {"foo"}, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.findByCriteria(criteria, 10).isEmpty());
+  }
+
+  @Test
+  public void testFindByLogLevel() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria(null, TEST_LEVEL, null, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.findByCriteria(criteria, 10).size());
+  }
+
+  @Test
+  public void testFindByLogLevelNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria(null, Level.ERROR, null, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.findByCriteria(criteria, 10).isEmpty());
+  }
+
+  @Test
+  public void testFindByOriginService() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(TEST_ORIGIN_SERVICE, null, null, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.findByCriteria(criteria, 10).size());
+  }
+
+  @Test
+  public void testFindByOriginServiceNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria("foobar", null, null, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.findByCriteria(criteria, 10).isEmpty());
+  }
+
+  @Test
+  public void testFindByLogLevelAndOriginService() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(TEST_ORIGIN_SERVICE, TEST_LEVEL, null, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.findByCriteria(criteria, 10).size());
+  }
+
+  @Test
+  public void testFindByLogLevelOriginServiceNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria("foobar", Level.ERROR, null, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.findByCriteria(criteria, 10).isEmpty());
+  }
+
+  @Test
+  public void testFindByLogLevelAndOriginServiceAndLabels() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.findByCriteria(criteria, 10).size());
+  }
+
+  @Test
+  public void testFindByLogLevelOriginServiceAndLabelsNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria("foobar", Level.ERROR, new String[] {"foo"}, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.findByCriteria(criteria, 10).isEmpty());
+  }
+
+  @Test
+  public void testRemoveByTime() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria(null, null, null, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.removeByCriteria(criteria).size());
+  }
+
+  @Test
+  public void testRemovedByTimeNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(null, null, null, null, Long.MAX_VALUE - 100, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.removeByCriteria(criteria).isEmpty());
+  }
+
+
+  @Test
+  public void testRemoveByLabel() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria(null, null, TEST_LABELS, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.removeByCriteria(criteria).size());
+  }
+
+  @Test
+  public void testRemoveByLabelNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(null, null, new String[] {"foo"}, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.removeByCriteria(criteria).isEmpty());
+  }
+
+  @Test
+  public void testRemoveByLogLevel() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria(null, TEST_LEVEL, null, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.removeByCriteria(criteria).size());
+  }
+
+  @Test
+  public void testRemoveByLogLevelNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria(null, Level.ERROR, null, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.removeByCriteria(criteria).isEmpty());
+  }
+
+  @Test
+  public void testRemoveByOriginService() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(TEST_ORIGIN_SERVICE, null, null, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.removeByCriteria(criteria).size());
+  }
+
+  @Test
+  public void testRemoveByOriginServiceNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria("foobar", null, null, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.removeByCriteria(criteria).isEmpty());
+  }
+
+  @Test
+  public void testRemoveByLogLevelAndOriginService() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(TEST_ORIGIN_SERVICE, TEST_LEVEL, null, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.removeByCriteria(criteria).size());
+  }
+
+  @Test
+  public void testRemoveByLogLevelOriginServiceNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria = buildCriteria("foobar", Level.ERROR, null, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.removeByCriteria(criteria).isEmpty());
+  }
+
+  @Test
+  public void testRemoveByLogLevelAndOriginServiceAndLabels() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, null, -1, Long.MAX_VALUE);
+    assertEquals("Correct number of entries not found with query", 1,
+        logEntryDAO.removeByCriteria(criteria).size());
+  }
+
+  @Test
+  public void testRemoveByLogLevelOriginServiceAndLabelsNoMatch() {
+    LogEntry entry = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
+    logEntryDAO.save(entry);
+    verifyPersistence(entry, true);
+    MatchCriteria criteria =
+        buildCriteria("foobar", Level.ERROR, new String[] {"foo"}, null, -1, Long.MAX_VALUE);
+    assertTrue("No entries should have been found but results were returned",
+        logEntryDAO.removeByCriteria(criteria).isEmpty());
+  }
+
+  private MatchCriteria buildCriteria(String originService, Level logLevel, String[] labels,
+      String message, long start, long end) {
+    MatchCriteria c = new MatchCriteria();
+    if (logLevel != null) {
+      Level[] levels = {logLevel};
+      c.setLogLevels(levels);
+    }
+    if (labels != null)
+      c.setLabels(labels);
+    if (originService != null) {
+      String[] origServices = {originService};
+      c.setOriginServices(origServices);
+    }
+    if (message != null) {
+      String[] msgs = {message};
+      c.setMessageKeywords(msgs);
+    }
+    c.setStart(start);
+    c.setEnd(end);
+    return c;
   }
 
   abstract public void cleanPersistence();

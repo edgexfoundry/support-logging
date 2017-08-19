@@ -43,9 +43,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/logs")
 public class LoggingControllerImpl implements LoggingController {
-  
+
   private static final Logger logger = Logger.getLogger(LoggingControllerImpl.class);
-  
+
   private static final String FETCH_ERROR = "Error fetching logEntry:";
   private static final String REMOVE_ERROR = "Error removing logEntry:";
   private static final String LOG_ENTRY = "LogEntry";
@@ -93,13 +93,7 @@ public class LoggingControllerImpl implements LoggingController {
     if (limit > maxLimit) {
       throw new LimitExceededException(LOG_ENTRY);
     }
-    MatchCriteria criteria = new MatchCriteria();
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(new MatchCriteria(), limit);
   }
 
   /**
@@ -123,12 +117,7 @@ public class LoggingControllerImpl implements LoggingController {
     MatchCriteria criteria = new MatchCriteria();
     criteria.setStart(start);
     criteria.setEnd(end);
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(criteria, limit);
   }
 
   /**
@@ -155,12 +144,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setStart(start);
     criteria.setEnd(end);
     criteria.setLabels(labels);
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(criteria, limit);
   }
 
   /**
@@ -189,12 +173,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setStart(start);
     criteria.setEnd(end);
     criteria.setOriginServices(originServices);
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(criteria, limit);
   }
 
   /**
@@ -222,12 +201,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setStart(start);
     criteria.setEnd(end);
     criteria.setMessageKeywords(keywords);
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(criteria, limit);
   }
 
   /**
@@ -255,12 +229,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setStart(start);
     criteria.setEnd(end);
     criteria.setLogLevels(logLevels);
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(criteria, limit);
   }
 
   /**
@@ -293,12 +262,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setEnd(end);
     criteria.setLogLevels(logLevels);
     criteria.setOriginServices(originServices);
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(criteria, limit);
   }
 
   /**
@@ -334,12 +298,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setLogLevels(logLevels);
     criteria.setOriginServices(originServices);
     criteria.setLabels(labels);
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(criteria, limit);
   }
 
   /**
@@ -378,12 +337,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setOriginServices(originServices);
     criteria.setLabels(labels);
     criteria.setMessageKeywords(keywords);
-    try {
-      return service.searchByCriteria(criteria, limit);
-    } catch (Exception e) {
-      logger.error(FETCH_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return getEnteries(criteria, limit);
   }
 
   /**
@@ -400,12 +354,7 @@ public class LoggingControllerImpl implements LoggingController {
     MatchCriteria criteria = new MatchCriteria();
     criteria.setStart(start);
     criteria.setEnd(end);
-    try {
-      return service.removeByCriteria(criteria).size();
-    } catch (Exception e) {
-      logger.error(REMOVE_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return deleteLogEntries(criteria);
   }
 
   /**
@@ -426,12 +375,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setStart(start);
     criteria.setEnd(end);
     criteria.setMessageKeywords(keywords);
-    try {
-      return service.removeByCriteria(criteria).size();
-    } catch (Exception e) {
-      logger.error(REMOVE_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return deleteLogEntries(criteria);
   }
 
   /**
@@ -451,12 +395,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setStart(start);
     criteria.setEnd(end);
     criteria.setLabels(labels);
-    try {
-      return service.removeByCriteria(criteria).size();
-    } catch (Exception e) {
-      logger.error(REMOVE_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return deleteLogEntries(criteria);
   }
 
   /**
@@ -477,12 +416,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setStart(start);
     criteria.setEnd(end);
     criteria.setOriginServices(originServices);
-    try {
-      return service.removeByCriteria(criteria).size();
-    } catch (Exception e) {
-      logger.error(REMOVE_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return deleteLogEntries(criteria);
   }
 
   /**
@@ -502,12 +436,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setStart(start);
     criteria.setEnd(end);
     criteria.setLogLevels(logLevels);
-    try {
-      return service.searchByCriteria(criteria).size();
-    } catch (Exception e) {
-      logger.error(REMOVE_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return deleteLogEntries(criteria);
   }
 
   /**
@@ -532,12 +461,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setEnd(end);
     criteria.setLogLevels(logLevels);
     criteria.setOriginServices(originServices);
-    try {
-      return service.removeByCriteria(criteria).size();
-    } catch (Exception e) {
-      logger.error(REMOVE_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return deleteLogEntries(criteria);
   }
 
   /**
@@ -566,12 +490,7 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setLogLevels(logLevels);
     criteria.setOriginServices(originServices);
     criteria.setLabels(labels);
-    try {
-      return service.searchByCriteria(criteria).size();
-    } catch (Exception e) {
-      logger.error(REMOVE_ERROR, e);
-      throw new ServiceException(e);
-    }
+    return deleteLogEntries(criteria);
   }
 
   /**
@@ -602,6 +521,19 @@ public class LoggingControllerImpl implements LoggingController {
     criteria.setOriginServices(originServices);
     criteria.setLabels(labels);
     criteria.setMessageKeywords(keywords);
+    return deleteLogEntries(criteria);
+  }
+
+  private List<LogEntry> getEnteries(MatchCriteria criteria, int limit) {
+    try {
+      return service.searchByCriteria(criteria, limit);
+    } catch (Exception e) {
+      logger.error(FETCH_ERROR, e);
+      throw new ServiceException(e);
+    }
+  }
+
+  private int deleteLogEntries(MatchCriteria criteria) {
     try {
       return service.removeByCriteria(criteria).size();
     } catch (Exception e) {
@@ -609,5 +541,4 @@ public class LoggingControllerImpl implements LoggingController {
       throw new ServiceException(e);
     }
   }
-
 }
