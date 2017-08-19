@@ -44,7 +44,7 @@ public class LoggingServiceImpl implements LoggingService {
 
   @Override
   public List<LogEntry> searchByCriteria(MatchCriteria criteria) {
-    return logEntryDAO.findByCriteria(criteria, -1);
+    return searchByCriteria(criteria, -1);
   }
 
   @Override
