@@ -41,6 +41,10 @@ import org.edgexfoundry.support.domain.logging.MatchCriteria;
 import org.edgexfoundry.support.logging.dao.LogEntryDAO;
 import org.edgexfoundry.support.logging.dao.MDC_ENUM_CONSTANTS;
 
+/**
+ * @author Jim
+ *
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = EdgeXSupportLoggingApplication.class)
 public abstract class LogEntryDAOTest {
@@ -97,20 +101,11 @@ public abstract class LogEntryDAOTest {
     verifyPersistence(trace, false);
   }
 
-  @Test // is this test needed or useful? TODO check with Jude Huang. Do we need to test debug add
-        // and info add together?
-  public void testSaveInfo() {
-    LogEntry debug = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
-    logEntryDAO.save(debug);
-    verifyPersistence(debug, true);
-    MatchCriteria criteria = new MatchCriteria();
-    logEntryDAO.removeByCriteria(criteria);
-    LogEntry info = buildLogEntry(TEST_ORIGIN_SERVICE, Level.INFO, TEST_LABELS, TEST_MSG);
-    logEntryDAO.save(info);
-    verifyPersistence(info, true);
-  }
-
-  @Test // is this test needed or useful? TODO check with Jude Huang
+  /**
+   * From Jude Hung - test to verify a bug fix that FileLogEntryDAO may miss the log entries due to
+   * file locking interference from logback
+   */
+  @Test
   public void testSaveFindThenRemoveByCriteria() {
     LogEntry debug = buildLogEntry(TEST_ORIGIN_SERVICE, TEST_LEVEL, TEST_LABELS, TEST_MSG);
     LogEntry info = buildLogEntry(TEST_ORIGIN_SERVICE, Level.INFO, TEST_LABELS, TEST_MSG);
