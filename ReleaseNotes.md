@@ -8,10 +8,10 @@ The Barcelona Release (v 0.2) of the Support Logging micro service includes the 
 * POM changes for appropriate repository information for distribution/repos management, checkstyle plugins, etc.
 * Added Dockerfile for creation of micro service targeted for ARM64 
 * Added interfaces for all Controller classes
+* Added implementation for log updates, deletes
 
 ## Bug Fixes
 * Fix many bugs associated to logging queries
-* Added implementation for log updates, deletes
 * Fixed issue that allows log file path to be platform agnostic
 
 ## Pull Request/Commit Details
